@@ -12,14 +12,19 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.board.domain.BoardVO;
 import com.board.domain.Page;
+import com.board.domain.ReplyVO;
 import com.board.service.BoardService;
+import com.board.service.ReplyService;
 
 @Controller
-@RequestMapping("/board/")
+@RequestMapping("/board/*")
 public class BoardController {
 
 	@Inject
-	BoardService service;
+	private BoardService service;
+	
+	@Inject
+	private ReplyService replyService;
 
 	// 게시물 목록
 	@RequestMapping(value = "/list", method = RequestMethod.GET)
@@ -50,10 +55,14 @@ public class BoardController {
 	public void getView(@RequestParam("bno") int bno, Model model) throws Exception { // @RequestParam을 이용하면 주소에 있는 특정한
 																						// 값 가져올 수 있음
 																						// 주소에서 bno를 찾아 그값을 int bno로 넣어줌
-
 		BoardVO vo = service.view(bno); // BoardVO를 이용하여 service에서 데이터를 받고
 
 		model.addAttribute("view", vo); // model을 이용해서 뷰에 데이터를 넘겨줌, 넘겨주는 모델의 이름은 view
+		
+		// 댓글 조회
+		List<ReplyVO> reply = null;
+		reply = replyService.list(bno);
+		model.addAttribute("reply",reply);
 
 	}
 
@@ -158,7 +167,13 @@ public class BoardController {
 		Page page = new Page();
 
 		page.setNum(num);
-		page.setCount(service.count());
+		//page.setCount(service.count());	// 페이징을 만들 때 게시물의 갯수를 구하는 메서드
+		page.setCount(service.searchCount(searchType, keyword));
+		
+		// 검색 타입과 검색어
+		//page.setSearchTypeKeyword(searchType, keyword);
+		page.setSearchType(searchType);
+		page.setKeyword(keyword);
 
 		List<BoardVO> list = null;
 		//list = service.listPage(page.getDisplayPost(), page.getPostNum());
@@ -167,6 +182,10 @@ public class BoardController {
 		model.addAttribute("list", list);
 		model.addAttribute("page", page);
 		model.addAttribute("select", num);
+		
+		// 검색상태 유지 (모델로 저장해서 뷰로 전달)
+//		model.addAttribute("searchType", searchType);
+//		model.addAttribute("keyword",keyword);
 
 	}
 
